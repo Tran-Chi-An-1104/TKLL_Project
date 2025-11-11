@@ -1,0 +1,61 @@
+#include <Arduino.h>
+#define LED_PIN 48
+#define BUTTON_PIN 7
+// put function declarations here:
+
+static QueueHandle_t tQueue = NULL;
+
+void TaskLED(void *pvParameter){
+  bool prev_state = false;
+  bool state = false;
+  while(true){
+    xQueueReceive(tQueue, &state, portMAX_DELAY);
+    if(state != prev_state){
+      prev_state = state;
+      if(state){
+        digitalWrite(LED_PIN, HIGH);
+        Serial.println("LED ON");
+      }
+      else{
+        digitalWrite(LED_PIN, LOW);
+        Serial.println("LED OFF");
+      }
+    }
+  }
+}
+
+void TaskButton(void *pvParameter){
+  bool prev_state, current_state;
+  prev_state = current_state = false;
+  while(true){
+    current_state = (digitalRead(BUTTON_PIN) == LOW) ? true : false;
+    if(current_state != prev_state){
+      prev_state = current_state;
+      if(current_state){
+        Serial.println("PRESSED");
+      }
+      else{
+        Serial.println("RELEASED");
+      }
+      xQueueSend(tQueue, &current_state, 0);
+    }
+    vTaskDelay(10);
+  }
+}
+
+void setup() {
+  // put your setup code here, to run once:
+  Serial.begin(115200);
+
+  tQueue = xQueueCreate(1, sizeof(bool));
+
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(BUTTON_PIN, INPUT);
+  xTaskCreate(TaskLED, "LEDBLINK", 2048, NULL, 2, NULL);
+  xTaskCreate(TaskButton, "BUTTONREAD", 2048, NULL, 3, NULL);
+  //vTaskStartScheduler();
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+}
