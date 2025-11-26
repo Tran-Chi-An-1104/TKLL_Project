@@ -398,10 +398,10 @@ void handleToggle() {
 
   if (led == 1) {
     led1_state = !led1_state;
-    digitalWrite(LED1_PIN, led1_state ? HIGH : LOW); // ✅ điều khiển thật
+    digitalWrite(LED1_PIN, led1_state ? HIGH : LOW); 
   } else if (led == 2) {
     led2_state = !led2_state;
-    digitalWrite(LED2_PIN, led2_state ? HIGH : LOW); // ✅ điều khiển thật
+    digitalWrite(LED2_PIN, led2_state ? HIGH : LOW); 
   }
 
   server.send(200, "application/json",
