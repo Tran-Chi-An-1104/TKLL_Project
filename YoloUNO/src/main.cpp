@@ -6,6 +6,7 @@
 #include "TaskIOTClient.h"
 #include "TaskLightSleep.h"
 #include "TaskTinyML.h"
+#include "TaskSerialBridge.h" 
 #define BUTTON_PIN 7
 // put function declarations here:
 
@@ -26,6 +27,7 @@ void setup() {
   xTaskCreate(TaskMainserver, "Main Server", 8192, NULL, 2, NULL);
   xTaskCreate(TaskIOTClient, "MQTT Task",   8192, NULL, 1, NULL);
   xTaskCreate(TaskTinyML, "TinyML Task",   8192, NULL, 1, NULL);
+  xTaskCreate(TaskSerialBridge, "Serial Bridge", 4096, NULL, 1, NULL);
 }
 
 void loop() {
