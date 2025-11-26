@@ -8,6 +8,7 @@
 #include <WiFiClientSecure.h>
 #include <ArduinoJson.h>
 #include "TaskDHT20.h" 
+#include "TaskMainserver.h"
 
 void http_get_weather();
 void mqtt_setup();

@@ -10,19 +10,15 @@ static const char* MQTT_CLIENT_ID = "hackerbu";
 static const char* MQTT_USERNAME  = "hackerbu";
 static const char* MQTT_PASSWORD  = "hackerbu";
 
-// MQTT Client (TCP thường cho port 1883)
 static WiFiClient   netClient;
 static PubSubClient mqtt(netClient);
 
-// reconnect backoff
 static uint32_t lastReconnectTry    = 0;
 static uint32_t reconnectIntervalMs = 2000;
 
-// default weather location
 static double DEF_LAT = 10.8231;
 static double DEF_LON = 106.6297;
 
-// ThingsBoard / CoreIoT topics
 static const char* TB_TELEMETRY_TOPIC   = "v1/devices/me/telemetry";
 static const char* TB_RPC_REQUEST_TOPIC = "v1/devices/me/rpc/request/+";
 
@@ -31,7 +27,7 @@ static const char* TB_RPC_REQUEST_TOPIC = "v1/devices/me/rpc/request/+";
 // -------------------------------------------------------------
 static void mqtt_publish_status(const char* msg){
     char buf[96];
-    snprintf(buf, sizeof(buf), "{\"status\":\"%s\"}", msg);  // Corrected the stray characters and format.
+    snprintf(buf, sizeof(buf), "{\"status\":\"%s\"}", msg);  \
     mqtt.publish(TB_TELEMETRY_TOPIC, buf, false);
 }
 
@@ -97,14 +93,16 @@ static bool fetch_and_publish_weather(double lat, double lon){
 }
 
 // -------------------------------------------------------------
-// BRIDGE COMMAND HANDLER (weather and hello only)
+// BRIDGE COMMAND HANDLER 
 // -------------------------------------------------------------
+extern bool led1_state;
+extern bool led2_state;
+
 static void handle_cmd(String payload){
     payload.toLowerCase();
-    payload.trim();   // Remove leading/trailing spaces or newlines
+    payload.trim();   
 
     if (payload == "hello") {
-        // Send hello status to ThingsBoard
         mqtt_publish_status("hello_from_esp32");
     }
     else if (payload.startsWith("weather")) {
@@ -120,8 +118,21 @@ static void handle_cmd(String payload){
             }
         }
 
+        
         bool ok = fetch_and_publish_weather(lat, lon);
         mqtt_publish_status(ok ? "weather_ok" : "weather_error");
+    }
+
+    else if (payload == "toggle led1") {
+        led1_state = !led1_state;
+        digitalWrite(LED1_PIN, led1_state);
+        mqtt_publish_status(led1_state ? "led1_on" : "led1_off");
+    }
+
+    else if (payload == "toggle led2") {
+        led2_state = !led2_state;
+        digitalWrite(LED2_PIN, led2_state);
+        mqtt_publish_status(led2_state ? "led2_on" : "led2_off");
     }
     else {
         mqtt_publish_status("unknown_cmd");
@@ -140,7 +151,6 @@ static void on_mqtt_message(char* topic, byte* payload, unsigned int len) {
 
     String topicStr(topic);
 
-    // RPC request
     if (topicStr.startsWith("v1/devices/me/rpc/request/")) {
 
         int lastSlash = topicStr.lastIndexOf('/');
@@ -151,19 +161,16 @@ static void on_mqtt_message(char* topic, byte* payload, unsigned int len) {
         if (!deserializeJson(doc, s)) {
             String method = doc["method"] | "";
 
-            // --- Remote shell use case (CODE 2) ---
             if (method == "sendCommand") {
                 String cmd = doc["params"]["command"] | "";
-                cmd.trim();   // Remove newline
+                cmd.trim();   
 
                 Serial.println("[SHELL CMD] => " + cmd);
 
-                // Execute command
-                handle_cmd(cmd);  // This will handle "hello" and send status back
+                handle_cmd(cmd);  
 
-                // Respond to remote shell with the result
-                String resp = "{\"output\":\"hello_from_esp32\"}";  // Respond with the hello message
-                mqtt.publish(respTopic.c_str(), resp.c_str(), false);  // Send back the response
+                String resp = "{\"output\":\"hello_from_esp32\"}";  
+                mqtt.publish(respTopic.c_str(), resp.c_str(), false);  
                 return;
             }
 
@@ -179,7 +186,6 @@ static void on_mqtt_message(char* topic, byte* payload, unsigned int len) {
         return;
     }
 
-    // Fallback: Handle any other command
     handle_cmd(s);
 }
 
@@ -198,9 +204,9 @@ static bool mqtt_connect_once(){
                   COREIOT_HOST, COREIOT_PORT);
 
     bool ok = mqtt.connect(
-        MQTT_CLIENT_ID,   // Client ID
-        MQTT_USERNAME,    // Username
-        MQTT_PASSWORD     // Password
+        MQTT_CLIENT_ID,   
+        MQTT_USERNAME,    
+        MQTT_PASSWORD    
     );
 
     if (ok){
